@@ -1,9 +1,0 @@
-Content-Length: 386
-
-
-
-{"id":1,"jsonrpc":"2.0","result":{"capabilities":{"tools":{"listChanged":true}},"instructions":"Use renodx_list_connections to discover RenoDX DevKit instances. Devkit proxy tools are advertised up front and auto-connect to a single available backend when invoked.","protocolVersion":"2025-11-25","serverInfo":{"name":"renodx-mcp-bridge","title":"RenoDX MCP Bridge","version":"0.1.0"}}}Content-Length: 196
-
-
-
-{"id":2,"jsonrpc":"2.0","result":{"content":[{"text":"Queued a snapshot capture for device #0.","type":"text"}],"isError":false,"structuredContent":{"active":false,"deviceIndex":0,"queued":true}}}

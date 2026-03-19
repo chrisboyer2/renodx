@@ -1,9 +1,0 @@
-﻿Content-Length: 152
-
-{"method":"initialize","params":{"protocolVersion":"2025-11-25","clientInfo":{"name":"codex","version":"1.0"},"capabilities":{}},"id":1,"jsonrpc":"2.0"}Content-Length: 54
-
-{"method":"notifications/initialized","jsonrpc":"2.0"}Content-Length: 95
-
-{"method":"tools/call","params":{"name":"devkit_status","arguments":{}},"id":2,"jsonrpc":"2.0"}Content-Length: 103
-
-{"method":"tools/call","params":{"name":"devkit_queue_snapshot","arguments":{}},"id":3,"jsonrpc":"2.0"}
