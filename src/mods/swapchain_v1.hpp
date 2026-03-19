@@ -152,8 +152,6 @@ static SwapChainUpgradeTarget proxy_upgrade_target = {
 static std::shared_mutex g_last_device_proxy_mutex;
 static void* swap_chain_proxy_handle = nullptr;
 
-static thread_local bool is_creating_proxy_device = false;
-
 static IDXGISwapChain1* proxy_swap_chain = nullptr;
 static ID3D11Device* proxy_device = nullptr;
 static ID3D11DeviceContext* proxy_device_context = nullptr;
@@ -255,13 +253,13 @@ static ID3D11Device* GetDeviceProxy(renodx::utils::resource::ResourceInfo* host_
   UINT create_flags = D3D11_CREATE_DEVICE_SINGLETHREADED;
   D3D_FEATURE_LEVEL feature_level;
 
-  assert(is_creating_proxy_device == false);
+  assert(renodx::utils::directx::is_creating_proxy_device == false);
   assert(proxy_device_reshade == nullptr);
-  is_creating_proxy_device = true;
+  renodx::utils::directx::is_creating_proxy_device = true;
   if (FAILED(renodx::utils::directx::pD3D11CreateDevice(
           nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, create_flags,
           nullptr, 0, D3D11_SDK_VERSION, &proxy_device, &feature_level, &proxy_device_context))) {
-    is_creating_proxy_device = false;
+    renodx::utils::directx::is_creating_proxy_device = false;
     if (dxgi_factory != nullptr) {
       dxgi_factory->Release();
     }
@@ -269,7 +267,7 @@ static ID3D11Device* GetDeviceProxy(renodx::utils::resource::ResourceInfo* host_
     proxy_device_context = nullptr;
     return nullptr;
   }
-  is_creating_proxy_device = false;
+  renodx::utils::directx::is_creating_proxy_device = false;
   if (proxy_device_reshade == nullptr) {
     reshade::log::message(reshade::log::level::error, "mods::swapchain::GetDeviceProxy(D3D11CreateDevice succeeded but Reshade device is null)");
     // Reshade is not hooked to DX11
@@ -290,13 +288,13 @@ static ID3D11Device* GetDeviceProxy(renodx::utils::resource::ResourceInfo* host_
   // UINT create_flags = D3D11_CREATE_DEVICE_SINGLETHREADED;
   D3D_FEATURE_LEVEL feature_level = D3D_FEATURE_LEVEL_12_0;
 
-  assert(is_creating_proxy_device == false);
+  assert(renodx::utils::directx::is_creating_proxy_device == false);
   assert(proxy_device_reshade == nullptr);
-  is_creating_proxy_device = true;
+  renodx::utils::directx::is_creating_proxy_device = true;
 
   if (FAILED(renodx::utils::directx::pD3D12CreateDevice(
           nullptr, feature_level, IID_PPV_ARGS(&proxy_device)))) {
-    is_creating_proxy_device = false;
+    renodx::utils::directx::is_creating_proxy_device = false;
     if (dxgi_factory != nullptr) {
       dxgi_factory->Release();
     }
@@ -304,7 +302,7 @@ static ID3D11Device* GetDeviceProxy(renodx::utils::resource::ResourceInfo* host_
     return nullptr;
   }
 
-  is_creating_proxy_device = false;
+  renodx::utils::directx::is_creating_proxy_device = false;
   assert(proxy_device_reshade != nullptr);
 
   // Create swapchain for HWND
@@ -1370,7 +1368,7 @@ static bool OnCreateDevice(reshade::api::device_api api, uint32_t& api_version) 
 }
 
 static void OnInitDevice(reshade::api::device* device) {
-  if (ignored_device_apis.contains(device->get_api())) {
+  if (ignored_device_apis.contains(device->get_api()) && !renodx::utils::directx::is_creating_proxy_device) {
     std::stringstream s;
     s << "mods::swapchain::OnInitDevice(Abort from ignored device api: ";
     s << static_cast<uint32_t>(device->get_api());
@@ -1402,7 +1400,7 @@ static void OnInitDevice(reshade::api::device* device) {
   data->expected_constant_buffer_index = expected_constant_buffer_index;
   data->expected_constant_buffer_space = expected_constant_buffer_space;
 
-  if (is_creating_proxy_device) {
+  if (renodx::utils::directx::is_creating_proxy_device) {
     proxy_device_reshade = device;
   }
 }

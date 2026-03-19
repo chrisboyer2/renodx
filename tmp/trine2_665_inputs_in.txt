@@ -1,0 +1,8 @@
+{"method":"initialize","params":{"protocolVersion":"2025-11-25","clientInfo":{"name":"codex","version":"1.0"},"capabilities":{}},"id":1,"jsonrpc":"2.0"}
+{"method":"notifications/initialized","jsonrpc":"2.0"}
+{"method":"tools/call","params":{"name":"devkit_analyze_resource","arguments":{"resourceViewHandle":"0x000001F072D0F300","previewMode":"clamped"}},"id":2,"jsonrpc":"2.0"}
+{"method":"tools/call","params":{"name":"devkit_analyze_resource","arguments":{"resourceViewHandle":"0x000001F072D10400","preferClone":true,"previewMode":"clamped"}},"id":3,"jsonrpc":"2.0"}
+{"method":"tools/call","params":{"name":"devkit_analyze_resource","arguments":{"resourceViewHandle":"0x000001F072CDC120","preferClone":true,"previewMode":"clamped"}},"id":4,"jsonrpc":"2.0"}
+{"method":"tools/call","params":{"name":"devkit_analyze_resource","arguments":{"resourceViewHandle":"0x000001F072D10BE0","preferClone":true,"previewMode":"clamped"}},"id":5,"jsonrpc":"2.0"}
+{"method":"tools/call","params":{"name":"devkit_analyze_resource","arguments":{"resourceViewHandle":"0x000001F054823940","previewMode":"clamped"}},"id":6,"jsonrpc":"2.0"}
+{"method":"tools/call","params":{"name":"devkit_analyze_resource","arguments":{"resourceViewHandle":"0x000001F054820B40","previewMode":"clamped"}},"id":7,"jsonrpc":"2.0"}

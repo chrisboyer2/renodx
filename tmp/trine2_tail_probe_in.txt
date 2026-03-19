@@ -1,0 +1,25 @@
+﻿Content-Length: 153
+
+{"method":"initialize","params":{"protocolVersion":"2025-11-25","clientInfo":{"name":"codex","version":"1.0"},"capabilities":{}},"id":21,"jsonrpc":"2.0"}Content-Length: 54
+
+{"method":"notifications/initialized","jsonrpc":"2.0"}Content-Length: 123
+
+{"method":"tools/call","params":{"name":"devkit_list_draws","arguments":{"limit":30,"offset":629}},"id":22,"jsonrpc":"2.0"}Content-Length: 113
+
+{"method":"tools/call","params":{"name":"devkit_get_draw","arguments":{"drawIndex":650}},"id":23,"jsonrpc":"2.0"}Content-Length: 113
+
+{"method":"tools/call","params":{"name":"devkit_get_draw","arguments":{"drawIndex":651}},"id":24,"jsonrpc":"2.0"}Content-Length: 113
+
+{"method":"tools/call","params":{"name":"devkit_get_draw","arguments":{"drawIndex":652}},"id":25,"jsonrpc":"2.0"}Content-Length: 113
+
+{"method":"tools/call","params":{"name":"devkit_get_draw","arguments":{"drawIndex":653}},"id":26,"jsonrpc":"2.0"}Content-Length: 113
+
+{"method":"tools/call","params":{"name":"devkit_get_draw","arguments":{"drawIndex":654}},"id":27,"jsonrpc":"2.0"}Content-Length: 113
+
+{"method":"tools/call","params":{"name":"devkit_get_draw","arguments":{"drawIndex":655}},"id":28,"jsonrpc":"2.0"}Content-Length: 113
+
+{"method":"tools/call","params":{"name":"devkit_get_draw","arguments":{"drawIndex":656}},"id":29,"jsonrpc":"2.0"}Content-Length: 113
+
+{"method":"tools/call","params":{"name":"devkit_get_draw","arguments":{"drawIndex":657}},"id":30,"jsonrpc":"2.0"}Content-Length: 113
+
+{"method":"tools/call","params":{"name":"devkit_get_draw","arguments":{"drawIndex":658}},"id":31,"jsonrpc":"2.0"}

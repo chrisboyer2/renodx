@@ -1,0 +1,13 @@
+Content-Length: 386
+
+
+
+{"id":1,"jsonrpc":"2.0","result":{"capabilities":{"tools":{"listChanged":true}},"instructions":"Use renodx_list_connections to discover RenoDX DevKit instances. Devkit proxy tools are advertised up front and auto-connect to a single available backend when invoked.","protocolVersion":"2025-11-25","serverInfo":{"name":"renodx-mcp-bridge","title":"RenoDX MCP Bridge","version":"0.1.0"}}}Content-Length: 1593
+
+
+
+{"id":2,"jsonrpc":"2.0","result":{"content":[{"text":"Tracking 3 device(s). Selected device #0 (d3d9) has 3 tracked shaders and 0 captured draws.","type":"text"}],"isError":false,"structuredContent":{"connected":true,"deviceCount":3,"devices":[{"api":"d3d9","capturedDraws":0,"deviceHandle":"0x000001EEA6BE7FF8","index":0,"isD3D9Ex":true,"isSelected":true,"livePipelines":3727,"primarySwapchain":{"bufferCount":2,"format":"b8g8r8a8_unorm","height":720,"isFlip":false,"presentFlags":0,"presentMode":1,"sampleCount":1,"width":1280,"windowHandle":"0x000000000044066A"},"resourceUsageEntries":0,"snapshotActive":false,"snapshotQueued":false,"snapshotRows":0,"snapshotRowsValid":true,"swapchains":1,"trackedShaders":3},{"api":"d3d11","capturedDraws":0,"deviceHandle":"0x000001EEA80BDDF8","index":1,"isD3D9Ex":false,"isSelected":false,"livePipelines":6,"resourceUsageEntries":0,"snapshotActive":false,"snapshotQueued":false,"snapshotRows":0,"snapshotRowsValid":false,"swapchains":0,"trackedShaders":0},{"api":"d3d11","capturedDraws":0,"deviceHandle":"0x000001EEB047EEA8","index":2,"isD3D9Ex":false,"isSelected":false,"livePipelines":6,"primarySwapchain":{"bufferCount":2,"format":"r16g16b16a16_float","height":720,"isFlip":true,"presentFlags":2048,"presentMode":4,"sampleCount":1,"width":1280,"windowHandle":"0x000000000044066A"},"resourceUsageEntries":0,"snapshotActive":false,"snapshotQueued":false,"snapshotRows":0,"snapshotRowsValid":false,"swapchains":1,"trackedShaders":0}],"pipeName":"\\\\.\\pipe\\renodx-devkit-mcp-22376","selectedDeviceIndex":0,"snapshot":{"active":false,"queued":false}}}}Content-Length: 196
+
+
+
+{"id":3,"jsonrpc":"2.0","result":{"content":[{"text":"Queued a snapshot capture for device #0.","type":"text"}],"isError":false,"structuredContent":{"active":false,"deviceIndex":0,"queued":true}}}

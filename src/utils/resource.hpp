@@ -8,8 +8,10 @@
 #include <algorithm>
 #include <cassert>
 #include <functional>
+#include <mutex>
 #include <shared_mutex>
 #include <sstream>
+#include <unordered_set>
 #include <unordered_map>
 #include <vector>
 
@@ -17,6 +19,7 @@
 
 #include "../utils/bitwise.hpp"
 #include "../utils/data.hpp"
+#include "../utils/directx.hpp"
 #include "../utils/format.hpp"
 #include "../utils/hash.hpp"
 #include "../utils/log.hpp"
@@ -281,6 +284,8 @@ static struct Store {
 } local_store;
 
 static Store* store = &local_store;
+static std::mutex callbacks_mutex;
+static std::unordered_set<reshade::api::device_api> ignored_device_apis = {};
 
 static bool IsPrimaryHook() { return store->primary_store == &local_store; }
 
@@ -304,53 +309,75 @@ inline void RemoveCallback(std::vector<std::function<void(T*)>>& callbacks, void
   });
 }
 
+template <typename T>
+inline std::vector<std::function<void(T*)>> SnapshotCallbacks(const std::vector<std::function<void(T*)>>& callbacks) {
+  std::scoped_lock lock(callbacks_mutex);
+  return callbacks;
+}
+
 inline void RegisterOnInitResourceInfoCallback(const std::function<void(ResourceInfo*)>& callback) {
+  std::scoped_lock lock(callbacks_mutex);
   AddCallback(store->on_init_resource_info_callbacks, callback);
 }
 inline void RegisterOnDestroyResourceInfoCallback(const std::function<void(ResourceInfo*)>& callback) {
+  std::scoped_lock lock(callbacks_mutex);
   AddCallback(store->on_destroy_resource_info_callbacks, callback);
 }
 inline void RegisterOnInitResourceViewInfoCallback(const std::function<void(ResourceViewInfo*)>& callback) {
+  std::scoped_lock lock(callbacks_mutex);
   AddCallback(store->on_init_resource_view_info_callbacks, callback);
 }
 inline void RegisterOnDestroyResourceViewInfoCallback(const std::function<void(ResourceViewInfo*)>& callback) {
+  std::scoped_lock lock(callbacks_mutex);
   AddCallback(store->on_destroy_resource_view_info_callbacks, callback);
 }
 
 inline void UnregisterOnInitResourceInfoCallback(void (*callback)(ResourceInfo*)) {
+  std::scoped_lock lock(callbacks_mutex);
   RemoveCallback(store->on_init_resource_info_callbacks, callback);
 }
 inline void UnregisterOnDestroyResourceInfoCallback(void (*callback)(ResourceInfo*)) {
+  std::scoped_lock lock(callbacks_mutex);
   RemoveCallback(store->on_destroy_resource_info_callbacks, callback);
 }
 inline void UnregisterOnInitResourceViewInfoCallback(void (*callback)(ResourceViewInfo*)) {
+  std::scoped_lock lock(callbacks_mutex);
   RemoveCallback(store->on_init_resource_view_info_callbacks, callback);
 }
 inline void UnregisterOnDestroyResourceViewInfoCallback(void (*callback)(ResourceViewInfo*)) {
+  std::scoped_lock lock(callbacks_mutex);
   RemoveCallback(store->on_destroy_resource_view_info_callbacks, callback);
 }
 
 static void MigrateLocalCallbacksToActiveStore() {
-  if (local_callbacks_migrated || store == &local_store) return;
+  std::vector<std::function<void(ResourceInfo*)>> on_init_resource_info_callbacks;
+  std::vector<std::function<void(ResourceInfo*)>> on_destroy_resource_info_callbacks;
+  std::vector<std::function<void(ResourceViewInfo*)>> on_init_resource_view_info_callbacks;
+  std::vector<std::function<void(ResourceViewInfo*)>> on_destroy_resource_view_info_callbacks;
 
-  for (const auto& callback : local_store.on_init_resource_info_callbacks) {
+  {
+    std::scoped_lock lock(callbacks_mutex);
+    if (local_callbacks_migrated || store == &local_store) return;
+
+    on_init_resource_info_callbacks = std::move(local_store.on_init_resource_info_callbacks);
+    on_destroy_resource_info_callbacks = std::move(local_store.on_destroy_resource_info_callbacks);
+    on_init_resource_view_info_callbacks = std::move(local_store.on_init_resource_view_info_callbacks);
+    on_destroy_resource_view_info_callbacks = std::move(local_store.on_destroy_resource_view_info_callbacks);
+    local_callbacks_migrated = true;
+  }
+
+  for (const auto& callback : on_init_resource_info_callbacks) {
     RegisterOnInitResourceInfoCallback(callback);
   }
-  for (const auto& callback : local_store.on_destroy_resource_info_callbacks) {
+  for (const auto& callback : on_destroy_resource_info_callbacks) {
     RegisterOnDestroyResourceInfoCallback(callback);
   }
-  for (const auto& callback : local_store.on_init_resource_view_info_callbacks) {
+  for (const auto& callback : on_init_resource_view_info_callbacks) {
     RegisterOnInitResourceViewInfoCallback(callback);
   }
-  for (const auto& callback : local_store.on_destroy_resource_view_info_callbacks) {
+  for (const auto& callback : on_destroy_resource_view_info_callbacks) {
     RegisterOnDestroyResourceViewInfoCallback(callback);
   }
-
-  local_store.on_init_resource_info_callbacks.clear();
-  local_store.on_destroy_resource_info_callbacks.clear();
-  local_store.on_init_resource_view_info_callbacks.clear();
-  local_store.on_destroy_resource_view_info_callbacks.clear();
-  local_callbacks_migrated = true;
 }
 
 inline ResourceInfo* GetResourceInfo(const reshade::api::resource& resource, const bool& create = false) {
@@ -443,6 +470,15 @@ struct __declspec(uuid("3c7a0a1f-4bf3-4e7a-ac02-6f63fdc70187")) DeviceData {
 };
 
 static void OnInitDevice(reshade::api::device* device) {
+  if (ignored_device_apis.contains(device->get_api()) && !renodx::utils::directx::is_creating_proxy_device) {
+    std::stringstream s;
+    s << "utils::resource::OnInitDevice(Abort from ignored device api: ";
+    s << static_cast<uint32_t>(device->get_api());
+    s << ")";
+    reshade::log::message(reshade::log::level::info, s.str().c_str());
+    return;
+  }
+
   DeviceData* data;
   bool created = renodx::utils::data::CreateOrGet(device, data);
 
@@ -509,7 +545,7 @@ static void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
       assert(pair->second.resource.handle == resource.handle);
       was_destroyed = pair->second.destroyed;
       if (!pair->second.destroyed) {
-        for (auto& callback : store->on_destroy_resource_info_callbacks) {
+        for (const auto& callback : SnapshotCallbacks(store->on_destroy_resource_info_callbacks)) {
           callback(&pair->second);
         }
       }
@@ -547,7 +583,7 @@ static void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
       reshade::log::message(reshade::log::level::debug, s.str().c_str());
     }
 #endif
-    for (auto& callback : store->on_init_resource_info_callbacks) {
+    for (const auto& callback : SnapshotCallbacks(store->on_init_resource_info_callbacks)) {
       callback(&pair->second);
     }
   }
@@ -566,7 +602,7 @@ static void OnDestroySwapchain(reshade::api::swapchain* swapchain, bool resize) 
     }
     info->destroyed = true;
 
-    for (auto& callback : store->on_destroy_resource_info_callbacks) {
+    for (const auto& callback : SnapshotCallbacks(store->on_destroy_resource_info_callbacks)) {
       callback(info);
     }
   }
@@ -605,7 +641,7 @@ inline void OnInitResource(
       s << ")";
       reshade::log::message(reshade::log::level::debug, s.str().c_str());
 #endif
-      for (auto& callback : store->on_destroy_resource_info_callbacks) {
+      for (const auto& callback : SnapshotCallbacks(store->on_destroy_resource_info_callbacks)) {
         callback(&pair->second);
       }
     }
@@ -650,7 +686,7 @@ inline void OnInitResource(
   }
 #endif
 
-  for (auto& callback : store->on_init_resource_info_callbacks) {
+  for (const auto& callback : SnapshotCallbacks(store->on_init_resource_info_callbacks)) {
     callback(&pair->second);
   }
 }
@@ -695,7 +731,7 @@ inline void OnDestroyResource(reshade::api::device* device, reshade::api::resour
         resource_info->device = device;
         resource_info->destroyed = true;
 
-        for (auto& callback : store->on_destroy_resource_info_callbacks) {
+        for (const auto& callback : SnapshotCallbacks(store->on_destroy_resource_info_callbacks)) {
           callback(resource_info);
         }
       });
@@ -849,13 +885,13 @@ inline void OnInitResourceView(
       s << ")";
       reshade::log::message(reshade::log::level::debug, s.str().c_str());
 #endif
-      for (const auto& callback : store->on_destroy_resource_view_info_callbacks) {
+      for (const auto& callback : SnapshotCallbacks(store->on_destroy_resource_view_info_callbacks)) {
         callback(&pair->second);
       }
     }
     pair->second = new_data;
   }
-  for (const auto& callback : store->on_init_resource_view_info_callbacks) {
+  for (const auto& callback : SnapshotCallbacks(store->on_init_resource_view_info_callbacks)) {
     callback(&pair->second);
   }
 }
@@ -874,7 +910,7 @@ inline void OnDestroyResourceView(reshade::api::device* device, reshade::api::re
 
   resource_view_info->destroyed = true;
   assert(resource_view_info->view.handle != 0u);
-  for (auto& callback : store->on_destroy_resource_view_info_callbacks) {
+  for (const auto& callback : SnapshotCallbacks(store->on_destroy_resource_view_info_callbacks)) {
     callback(resource_view_info);
   }
 }

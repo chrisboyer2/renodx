@@ -1,0 +1,25 @@
+Content-Length: 386
+
+
+
+{"id":1,"jsonrpc":"2.0","result":{"capabilities":{"tools":{"listChanged":true}},"instructions":"Use renodx_list_connections to discover RenoDX DevKit instances. Devkit proxy tools are advertised up front and auto-connect to a single available backend when invoked.","protocolVersion":"2025-11-25","serverInfo":{"name":"renodx-mcp-bridge","title":"RenoDX MCP Bridge","version":"0.1.0"}}}Content-Length: 320
+
+
+
+{"id":2,"jsonrpc":"2.0","result":{"content":[{"text":"Set the live shader directory to 'C:\\Users\\njlt\\renodx\\src\\games\\trine2'.","type":"text"}],"isError":false,"structuredContent":{"configuredPath":"C:\\Users\\njlt\\renodx\\src\\games\\trine2","effectiveDirectory":"C:\\Users\\njlt\\renodx\\src\\games\\trine2"}}}Content-Length: 882
+
+
+
+{"id":3,"jsonrpc":"2.0","result":{"content":[{"text":"Loaded 3 live shader file(s) from 'C:\\Users\\njlt\\renodx\\src\\games\\trine2' for device #0 (3 activated).","type":"text"}],"isError":false,"structuredContent":{"activatedCount":3,"deviceIndex":0,"effectiveDirectory":"C:\\Users\\njlt\\renodx\\src\\games\\trine2","loadedCount":3,"shaders":[{"activated":true,"hash":"0x0638B0CD","hashValue":104378573,"isCompilationOk":true,"path":"C:\\Users\\njlt\\renodx\\src\\games\\trine2\\0x0638B0CD.ps_3_0.hlsl","removed":false},{"activated":true,"hash":"0x665CE1C2","hashValue":1717363138,"isCompilationOk":true,"path":"C:\\Users\\njlt\\renodx\\src\\games\\trine2\\0x665CE1C2.ps_3_0.hlsl","removed":false},{"activated":true,"hash":"0x88DD25AB","hashValue":2296194475,"isCompilationOk":true,"path":"C:\\Users\\njlt\\renodx\\src\\games\\trine2\\0x88DD25AB.ps_3_0.hlsl","removed":false}]}}}Content-Length: 499
+
+
+
+{"id":4,"jsonrpc":"2.0","result":{"content":[{"text":"Returned shader 0x0638B0CD from device #0.","type":"text"}],"isError":false,"structuredContent":{"deviceIndex":0,"shader":{"bypassDraw":false,"diskShader":{"isCompilationOk":true,"path":"C:\\Users\\njlt\\renodx\\src\\games\\trine2\\0x0638B0CD.ps_3_0.hlsl"},"entrypoint":"","hasAddonShader":false,"hasDiskShader":true,"hash":"0x0638B0CD","hashValue":104378573,"shaderDataSize":224,"source":"File","stage":"unknown"},"view":"summary","views":[]}}}Content-Length: 501
+
+
+
+{"id":5,"jsonrpc":"2.0","result":{"content":[{"text":"Returned shader 0x665CE1C2 from device #0.","type":"text"}],"isError":false,"structuredContent":{"deviceIndex":0,"shader":{"bypassDraw":false,"diskShader":{"isCompilationOk":true,"path":"C:\\Users\\njlt\\renodx\\src\\games\\trine2\\0x665CE1C2.ps_3_0.hlsl"},"entrypoint":"","hasAddonShader":false,"hasDiskShader":true,"hash":"0x665CE1C2","hashValue":1717363138,"shaderDataSize":1888,"source":"File","stage":"unknown"},"view":"summary","views":[]}}}Content-Length: 501
+
+
+
+{"id":6,"jsonrpc":"2.0","result":{"content":[{"text":"Returned shader 0x88DD25AB from device #0.","type":"text"}],"isError":false,"structuredContent":{"deviceIndex":0,"shader":{"bypassDraw":false,"diskShader":{"isCompilationOk":true,"path":"C:\\Users\\njlt\\renodx\\src\\games\\trine2\\0x88DD25AB.ps_3_0.hlsl"},"entrypoint":"","hasAddonShader":false,"hasDiskShader":true,"hash":"0x88DD25AB","hashValue":2296194475,"shaderDataSize":1896,"source":"File","stage":"unknown"},"view":"summary","views":[]}}}

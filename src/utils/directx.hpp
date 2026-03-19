@@ -26,6 +26,7 @@ inline decltype(&D3D12CreateDevice) pD3D12CreateDevice = nullptr;
 inline decltype(&D3D11CreateDevice) pD3D11CreateDevice = nullptr;
 inline decltype(&D3D12GetDebugInterface) pD3D12GetDebugInterface = nullptr;
 inline decltype(&D3D12SerializeRootSignature) pD3D12SerializeRootSignature = nullptr;
+inline thread_local bool is_creating_proxy_device = false;
 using PFN_D3D_COMPILE = HRESULT(WINAPI*)(LPCVOID, SIZE_T, LPCSTR, const D3D_SHADER_MACRO*, ID3DInclude*, LPCSTR, LPCSTR, UINT, UINT, ID3DBlob**, ID3DBlob**);
 inline PFN_D3D_COMPILE pD3DCompile = nullptr;
 

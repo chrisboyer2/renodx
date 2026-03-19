@@ -1,0 +1,11 @@
+﻿Content-Length: 153
+
+{"method":"initialize","params":{"protocolVersion":"2025-11-25","clientInfo":{"name":"codex","version":"1.0"},"capabilities":{}},"id":11,"jsonrpc":"2.0"}Content-Length: 54
+
+{"method":"notifications/initialized","jsonrpc":"2.0"}Content-Length: 96
+
+{"method":"tools/call","params":{"name":"devkit_status","arguments":{}},"id":12,"jsonrpc":"2.0"}Content-Length: 106
+
+{"method":"tools/call","params":{"name":"devkit_snapshot_summary","arguments":{}},"id":13,"jsonrpc":"2.0"}Content-Length: 110
+
+{"method":"tools/call","params":{"name":"devkit_list_draws","arguments":{"limit":12}},"id":14,"jsonrpc":"2.0"}

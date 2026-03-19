@@ -9,11 +9,13 @@
 #include <cstdint>
 #include <shared_mutex>
 #include <sstream>
+#include <unordered_set>
 #include <vector>
 
 #include <include/reshade.hpp>
 
 #include "./data.hpp"
+#include "./directx.hpp"
 #include "./format.hpp"
 #include "./log.hpp"
 
@@ -38,6 +40,7 @@ static struct Store {
 static Store* store = &local_store;
 
 static bool is_primary_hook = false;
+static std::unordered_set<reshade::api::device_api> ignored_device_apis = {};
 
 static PipelineLayoutData* GetPipelineLayoutData(const reshade::api::pipeline_layout& layout, bool create = false) {
   if (create) {
@@ -63,6 +66,15 @@ struct __declspec(uuid("080a74f2-9a2a-4af6-bb2c-8d083e0a354d")) DeviceData {
 };
 
 static void OnInitDevice(reshade::api::device* device) {
+  if (ignored_device_apis.contains(device->get_api()) && !renodx::utils::directx::is_creating_proxy_device) {
+    std::stringstream s;
+    s << "utils::pipeline_layout::OnInitDevice(Abort from ignored device api: ";
+    s << static_cast<uint32_t>(device->get_api());
+    s << ")";
+    reshade::log::message(reshade::log::level::info, s.str().c_str());
+    return;
+  }
+
   DeviceData* data;
   bool created = renodx::utils::data::CreateOrGet(device, data);
 
@@ -86,6 +98,7 @@ static void OnInitDevice(reshade::api::device* device) {
 }
 
 static void OnDestroyDevice(reshade::api::device* device) {
+  if (ignored_device_apis.contains(device->get_api())) return;
   if (!is_primary_hook) return;
   std::stringstream s;
   s << "utils::resource::OnDestroyDevice(";

@@ -22,12 +22,14 @@
 #include <shared_mutex>
 #include <sstream>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <include/reshade.hpp>
 
 #include "../utils/constants.hpp"
 #include "../utils/data.hpp"
+#include "../utils/directx.hpp"
 #include "../utils/format.hpp"
 #include "../utils/resource.hpp"
 #include "../utils/shader.hpp"
@@ -114,6 +116,7 @@ static float* resource_tag_float = nullptr;
 static int32_t expected_constant_buffer_index = -1;
 static uint32_t expected_constant_buffer_space = 0;
 static uint32_t constant_buffer_offset = 0;
+static std::unordered_set<reshade::api::device_api> ignored_device_apis = {};
 
 static std::shared_mutex unmodified_shaders_mutex;
 static std::unordered_set<uint32_t> unmodified_shaders;
@@ -137,6 +140,15 @@ struct __declspec(uuid("018e7b9c-23fd-7863-baf8-a8dad2a6db9d")) DeviceData {
 };
 
 static void OnInitDevice(reshade::api::device* device) {
+  if (ignored_device_apis.contains(device->get_api()) && !renodx::utils::directx::is_creating_proxy_device) {
+    std::stringstream s;
+    s << "mods::shader::OnInitDevice(Abort from ignored device api: ";
+    s << static_cast<uint32_t>(device->get_api());
+    s << ")";
+    reshade::log::message(reshade::log::level::info, s.str().c_str());
+    return;
+  }
+
   std::stringstream s;
   s << "mods::shader::OnInitDevice(";
   s << reinterpret_cast<uintptr_t>(device);
@@ -158,6 +170,7 @@ static void OnInitDevice(reshade::api::device* device) {
 }
 
 static void OnDestroyDevice(reshade::api::device* device) {
+  if (ignored_device_apis.contains(device->get_api())) return;
   std::stringstream s;
   s << "mods::shader::OnDestroyDevice(";
   s << reinterpret_cast<uintptr_t>(device);

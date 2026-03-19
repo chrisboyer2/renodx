@@ -618,14 +618,31 @@ find_program(
 
 if(VSWHERE_EXECUTABLE)
   execute_process(
-    COMMAND ${VSWHERE_EXECUTABLE} -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+    COMMAND ${VSWHERE_EXECUTABLE} -latest -products * -property installationPath
     OUTPUT_VARIABLE VS_INSTALL_PATH
     OUTPUT_STRIP_TRAILING_WHITESPACE)
 else()
   set(VS_INSTALL_PATH "C:/Program Files (x86)/Microsoft Visual Studio/2022/Community")
 endif()
 
-set(VCVARS_BAT "${VS_INSTALL_PATH}/VC/Auxiliary/Build/vcvarsall.bat")
+if(NOT VS_INSTALL_PATH AND DEFINED ENV{VSINSTALLDIR})
+  set(VS_INSTALL_PATH "$ENV{VSINSTALLDIR}")
+endif()
+
+string(REGEX REPLACE "[/\\\\]+$" "" VS_INSTALL_PATH "${VS_INSTALL_PATH}")
+
+find_program(
+  VCVARS_BAT
+  NAMES vcvarsall.bat
+  HINTS
+    "$ENV{VCINSTALLDIR}/Auxiliary/Build"
+    "${VS_INSTALL_PATH}/VC/Auxiliary/Build"
+    "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Auxiliary/Build"
+    "C:/Program Files (x86)/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build")
+
+if(NOT VCVARS_BAT)
+  message(FATAL_ERROR "Could not locate vcvarsall.bat required to build Detours.")
+endif()
 
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/external/Detours/lib.${DETOURS_ARCH}/detours.lib

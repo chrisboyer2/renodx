@@ -6,6 +6,7 @@
 #include <Windows.h>
 
 #include <algorithm>
+#include <cctype>
 #include <charconv>
 #include <cstdint>
 #include <cstdio>
@@ -274,17 +275,21 @@ struct HandleFrameResult {
   return pipes;
 }
 
-const std::vector<ToolDescriptor> FALLBACK_DEVKIT_TOOLS = [] {
-  std::vector<ToolDescriptor> tools = {};
-  tools.reserve(devkit_tool_catalog::METADATA.size());
-  for (const auto& [tool_name, metadata] : devkit_tool_catalog::METADATA) {
-    tools.push_back(ToolDescriptor{
-        .name = tool_name,
-        .metadata = metadata,
-    });
-  }
+[[nodiscard]] const std::vector<ToolDescriptor>& GetFallbackDevkitTools() {
+  static const std::vector<ToolDescriptor> tools = [] {
+    std::vector<ToolDescriptor> result = {};
+    result.reserve(devkit_tool_catalog::METADATA.size());
+    for (const auto& [tool_name, metadata] : devkit_tool_catalog::METADATA) {
+      result.push_back(ToolDescriptor{
+          .name = tool_name,
+          .metadata = metadata,
+      });
+    }
+    return result;
+  }();
+
   return tools;
-}();
+}
 
 const std::array<ToolDescriptor, 2> LOCAL_TOOLS = {
     ToolDescriptor{
@@ -368,23 +373,69 @@ void UpsertTool(std::vector<BridgeToolDescriptor>& tools, const BridgeToolDescri
 class StdioTransport {
  public:
   [[nodiscard]] static bool ReadFrame(std::string& payload) {
+    payload.clear();
     std::string line;
+    std::optional<size_t> content_length = std::nullopt;
+    bool saw_header = false;
     while (std::getline(std::cin, line)) {
       if (!line.empty() && line.back() == '\r') {
         line.pop_back();
       }
-      if (line.empty()) continue;
-      payload = line;
-      return true;
+
+      if (line.empty()) {
+        if (content_length.has_value()) {
+          payload.resize(content_length.value());
+          std::cin.read(payload.data(), static_cast<std::streamsize>(payload.size()));
+          if (std::cin.gcount() != static_cast<std::streamsize>(payload.size())) {
+            payload.clear();
+            return false;
+          }
+          return true;
+        }
+        if (saw_header) {
+          continue;
+        }
+        continue;
+      }
+
+      if (!saw_header && !line.empty() && (line.front() == '{' || line.front() == '[')) {
+        payload = line;
+        return true;
+      }
+
+      saw_header = true;
+      const std::string_view header(line);
+      constexpr std::string_view content_length_header = "content-length:";
+      if (header.size() >= content_length_header.size()) {
+        bool matches = true;
+        for (size_t i = 0; i < content_length_header.size(); ++i) {
+          if (static_cast<char>(std::tolower(static_cast<unsigned char>(header[i]))) != content_length_header[i]) {
+            matches = false;
+            break;
+          }
+        }
+        if (matches) {
+          auto value = header.substr(content_length_header.size());
+          while (!value.empty() && std::isspace(static_cast<unsigned char>(value.front())) != 0) {
+            value.remove_prefix(1);
+          }
+          std::uint32_t parsed_length = 0u;
+          if (ParseUnsigned(value, parsed_length)) {
+            content_length = parsed_length;
+          } else {
+            return false;
+          }
+        }
+      }
     }
 
-    payload.clear();
     return false;
   }
 
   static bool WriteFrame(std::string_view payload) {
-    std::cout << payload << '\n'
-              << std::flush;
+    std::cout << "Content-Length: " << payload.size() << "\r\n\r\n";
+    std::cout.write(payload.data(), static_cast<std::streamsize>(payload.size()));
+    std::cout.flush();
     return !std::cout.fail();
   }
 };
@@ -974,12 +1025,13 @@ class Bridge {
     }
 
     if (method == mcp::METHOD_TOOLS_LIST) {
+      const auto& fallback_devkit_tools = GetFallbackDevkitTools();
       std::vector<BridgeToolDescriptor> tools = {};
-      tools.reserve(LOCAL_TOOLS.size() + FALLBACK_DEVKIT_TOOLS.size());
+      tools.reserve(LOCAL_TOOLS.size() + fallback_devkit_tools.size());
       for (const auto& tool : LOCAL_TOOLS) {
         UpsertTool(tools, MakeBridgeToolDescriptor(tool));
       }
-      for (const auto& tool : FALLBACK_DEVKIT_TOOLS) {
+      for (const auto& tool : fallback_devkit_tools) {
         UpsertTool(tools, MakeBridgeToolDescriptor(tool));
       }
       for (const auto& tool : GetBackendTools()) {
