@@ -5,6 +5,8 @@
 
 #define ImTextureID ImU64
 
+#define RENODX_MODS_SWAPCHAIN_VERSION 2
+
 #define DEBUG_LEVEL_0
 
 #include <algorithm>
@@ -17,6 +19,7 @@
 
 #include "../../mods/shader.hpp"
 #include "../../mods/swapchain.hpp"
+#include "../../utils/device_proxy.hpp"
 #include "../../utils/pipeline_layout.hpp"
 #include "../../utils/resource.hpp"
 #include "../../utils/shader.hpp"
@@ -178,6 +181,10 @@ void ConfigureSwapchainProxy() {
   renodx::mods::swapchain::set_color_space = false;
   renodx::mods::swapchain::use_device_proxy = true;
   renodx::mods::swapchain::use_resource_cloning = true;
+  renodx::mods::swapchain::device_proxy_wait_idle_source = true;
+  renodx::mods::swapchain::device_proxy_wait_idle_destination = true;
+  renodx::utils::device_proxy::SetAllowTearing(false);
+  renodx::utils::device_proxy::SetPresentSyncInterval(1u);
   renodx::mods::swapchain::swap_chain_proxy_vertex_shader = __swap_chain_proxy_vertex_shader_dx11;
   renodx::mods::swapchain::swap_chain_proxy_pixel_shader = __swap_chain_proxy_pixel_shader_dx11;
 

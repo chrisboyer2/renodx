@@ -61,6 +61,7 @@ static std::atomic<bool> proxy_device_needs_resize = false;
 static std::atomic<uint32_t> proxy_resize_width = 0;
 static std::atomic<uint32_t> proxy_resize_height = 0;
 static std::atomic<UINT> proxy_present_flags = DXGI_PRESENT_ALLOW_TEARING;
+static std::atomic<UINT> proxy_present_sync_interval = 0u;
 static std::atomic<uint32_t> proxy_swapchain_last_width = 0;
 static std::atomic<uint32_t> proxy_swapchain_last_height = 0;
 static std::atomic<uintptr_t> proxy_swapchain_last_hwnd = 0;
@@ -71,6 +72,7 @@ static std::atomic<bool> proxy_settings_dirty = false;
 static std::atomic<uint32_t> proxy_teardown_deferred_presents = 0;
 static std::atomic<bool> proxy_same_hwnd_non_flip_bootstrap = false;
 static std::atomic<bool> proxy_same_hwnd_flip_established = false;
+static std::atomic<bool> proxy_allow_tearing = true;
 
 static bool device_proxy_creation_failed = false;
 
@@ -247,6 +249,14 @@ static void SetIntermediateFormat(reshade::api::format format) {
     proxy_settings_dirty = true;
     target_intermediate_format = format;
   }
+}
+
+static void SetAllowTearing(bool allow_tearing) {
+  proxy_allow_tearing.store(allow_tearing, std::memory_order_relaxed);
+}
+
+static void SetPresentSyncInterval(UINT sync_interval) {
+  proxy_present_sync_interval.store(sync_interval, std::memory_order_relaxed);
 }
 
 static void SetProxySettings(const renodx::utils::draw::SwapchainProxyPass& settings) {
@@ -497,8 +507,9 @@ static ID3D11Device* GetDeviceProxy(renodx::utils::resource::ResourceInfo* host_
     }
   }
 
-  sc_desc.Flags = tearing_supported ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
-  proxy_present_flags = tearing_supported ? DXGI_PRESENT_ALLOW_TEARING : 0u;
+  const bool allow_tearing = tearing_supported && proxy_allow_tearing.load(std::memory_order_relaxed);
+  sc_desc.Flags = allow_tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
+  proxy_present_flags = allow_tearing ? DXGI_PRESENT_ALLOW_TEARING : 0u;
 
   is_creating_proxy_swapchain = true;
   const auto hr = dxgi_factory->CreateSwapChainForHwnd(
@@ -1100,7 +1111,9 @@ static void OnDestroySwapchain(reshade::api::swapchain* swapchain, bool resize) 
 
   // Any host swapchain destroy is a hard invalidation boundary.
   ReleaseProxySwapChain();
-  proxy_present_flags = DXGI_PRESENT_ALLOW_TEARING;
+  proxy_present_flags = proxy_allow_tearing.load(std::memory_order_relaxed)
+                            ? DXGI_PRESENT_ALLOW_TEARING
+                            : 0u;
   ResetProxyRuntimeStateAfterTeardown();
 }
 
@@ -1660,7 +1673,8 @@ static void OnPresent(
     proxy_present_test_pending.store(false, std::memory_order_relaxed);
   }
 
-  const HRESULT present_hr = proxy_swap_chain->Present(0, present_flags);
+  const UINT sync_interval = proxy_present_sync_interval.load(std::memory_order_relaxed);
+  const HRESULT present_hr = proxy_swap_chain->Present(sync_interval, present_flags);
   if (FAILED(present_hr)) {
     if (present_hr == DXGI_ERROR_INVALID_CALL) {
       const uint32_t streak = proxy_invalid_call_streak.fetch_add(1, std::memory_order_relaxed) + 1;
