@@ -1,5 +1,5 @@
-#ifndef SRC_TEMPLATE_SHARED_H_
-#define SRC_TEMPLATE_SHARED_H_
+#ifndef SRC_GAMES_TRINE2_SHARED_H_
+#define SRC_GAMES_TRINE2_SHARED_H_
 
 // #define RENODX_PEAK_WHITE_NITS                 1000.f
 // #define RENODX_DIFFUSE_WHITE_NITS              renodx::color::bt2408::REFERENCE_WHITE
@@ -119,4 +119,4 @@ cbuffer shader_injection : register(b13) {
 
 #endif
 
-#endif  // SRC_TEMPLATE_SHARED_H_
+#endif  // SRC_GAMES_TRINE2_SHARED_H_

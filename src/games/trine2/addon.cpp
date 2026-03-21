@@ -36,12 +36,19 @@ renodx::mods::shader::CustomShaders custom_shaders = {
     CustomShaderEntry(0x88DD25AB),
 };
 
+constexpr float kDefaultPeakWhiteNits = 1000.f;
+constexpr float kDefaultPaperWhiteNits = 203.f;
+constexpr float kFixedToneMapType = 3.f;
+constexpr int32_t kExpectedConstantBufferIndex = 13;
+constexpr uint32_t kExpectedConstantBufferSpace = 50;
+constexpr uint32_t kPresentSyncInterval = 1u;
+
 ShaderInjectData shader_injection = {
-    .peak_white_nits = 1000.f,
-    .diffuse_white_nits = 203.f,
-    .graphics_white_nits = 203.f,
+    .peak_white_nits = kDefaultPeakWhiteNits,
+    .diffuse_white_nits = kDefaultPaperWhiteNits,
+    .graphics_white_nits = kDefaultPaperWhiteNits,
     .color_grade_strength = 1.f,
-    .tone_map_type = 3.f,
+    .tone_map_type = kFixedToneMapType,
     .tone_map_exposure = 1.f,
     .tone_map_highlights = 1.f,
     .tone_map_shadows = 1.f,
@@ -79,7 +86,7 @@ void SyncUiBrightness() {
 void ApplyFixedTonemapConfig() {
   // Trine 2 uses a fixed late-scene recovery path, so keep the unused shared
   // tonemap controls pinned to neutral values.
-  shader_injection.tone_map_type = 3.f;
+  shader_injection.tone_map_type = kFixedToneMapType;
   shader_injection.gamma_correction = 0.f;
   shader_injection.tone_map_per_channel = 0.f;
   shader_injection.tone_map_hue_processor = 0.f;
@@ -137,8 +144,8 @@ bool fired_on_init_swapchain = false;
 void OnPresetOff() {
   shader_injection.tone_map_type = 0.f;
   renodx::utils::settings::UpdateSettings({
-      {"ToneMapPeakNits", 203.f},
-      {"ToneMapGameNits", 203.f},
+      {"ToneMapPeakNits", kDefaultPaperWhiteNits},
+      {"ToneMapGameNits", kDefaultPaperWhiteNits},
   });
   SyncUiBrightness();
 }
@@ -147,7 +154,7 @@ void OnInitSwapchain(reshade::api::swapchain* swapchain, bool resize) {
   if (resize || fired_on_init_swapchain) return;
   if (!renodx::utils::swapchain::IsDXGI(swapchain)) return;
 
-  const float peak_nits = renodx::utils::swapchain::GetPeakNits(swapchain).value_or(1000.f);
+  const float peak_nits = renodx::utils::swapchain::GetPeakNits(swapchain).value_or(kDefaultPeakWhiteNits);
   for (auto* setting : settings) {
     if (setting->key != "ToneMapPeakNits") continue;
     setting->default_value = std::round(peak_nits);
@@ -173,8 +180,8 @@ void ConfigureIgnoredApis() {
 }
 
 void ConfigureSwapchainProxy() {
-  renodx::mods::swapchain::expected_constant_buffer_index = 13;
-  renodx::mods::swapchain::expected_constant_buffer_space = 50;
+  renodx::mods::swapchain::expected_constant_buffer_index = kExpectedConstantBufferIndex;
+  renodx::mods::swapchain::expected_constant_buffer_space = kExpectedConstantBufferSpace;
   renodx::mods::swapchain::force_borderless = false;
   renodx::mods::swapchain::prevent_full_screen = false;
   renodx::mods::swapchain::force_screen_tearing = false;
@@ -184,16 +191,16 @@ void ConfigureSwapchainProxy() {
   renodx::mods::swapchain::device_proxy_wait_idle_source = true;
   renodx::mods::swapchain::device_proxy_wait_idle_destination = true;
   renodx::utils::device_proxy::SetAllowTearing(false);
-  renodx::utils::device_proxy::SetPresentSyncInterval(1u);
+  renodx::utils::device_proxy::SetPresentSyncInterval(kPresentSyncInterval);
   renodx::mods::swapchain::swap_chain_proxy_vertex_shader = __swap_chain_proxy_vertex_shader_dx11;
   renodx::mods::swapchain::swap_chain_proxy_pixel_shader = __swap_chain_proxy_pixel_shader_dx11;
 
-  renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+  renodx::mods::swapchain::resource_upgrade_infos.push_back({
       .old_format = reshade::api::format::b8g8r8a8_unorm,
       .new_format = reshade::api::format::r16g16b16a16_float,
       .use_resource_view_cloning = true,
   });
-  renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+  renodx::mods::swapchain::resource_upgrade_infos.push_back({
       // The late scene color feeding 0x665CE1C2 is packed into a full-size
       // RGB10A2 render target before our shader sees it. Upgrade that target
       // so the recovered path can keep the original scene detail intact.
@@ -201,7 +208,7 @@ void ConfigureSwapchainProxy() {
       .new_format = reshade::api::format::r16g16b16a16_float,
       .usage_include = reshade::api::resource_usage::render_target,
   });
-  renodx::mods::swapchain::swap_chain_upgrade_targets.push_back({
+  renodx::mods::swapchain::resource_upgrade_infos.push_back({
       .old_format = reshade::api::format::r16g16b16a16_unorm,
       .new_format = reshade::api::format::r16g16b16a16_float,
       .ignore_size = true,
@@ -212,9 +219,9 @@ void ConfigureSwapchainProxy() {
 void ConfigureShaderRuntime() {
   renodx::mods::shader::force_pipeline_cloning = true;
   renodx::mods::shader::allow_multiple_push_constants = true;
-  renodx::mods::shader::constant_buffer_offset = 50 * 4;
-  renodx::mods::shader::expected_constant_buffer_index = 13;
-  renodx::mods::shader::expected_constant_buffer_space = 50;
+  renodx::mods::shader::constant_buffer_offset = kExpectedConstantBufferSpace * 4;
+  renodx::mods::shader::expected_constant_buffer_index = kExpectedConstantBufferIndex;
+  renodx::mods::shader::expected_constant_buffer_space = kExpectedConstantBufferSpace;
 }
 
 }  // namespace
