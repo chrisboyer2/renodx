@@ -24,6 +24,11 @@
 namespace {
 
 renodx::mods::shader::CustomShaders custom_shaders = {
+    CustomShaderEntry(0x1182BDDE),  // Glow composite clamp variant
+    CustomShaderEntry(0x0AABEFCE),  // Small-tap final composite
+    CustomShaderEntry(0xB1AC29D2),  // Offset final composite
+    CustomShaderEntry(0xC11D889F),  // Final composite variant
+    CustomShaderEntry(0xC35E8902),  // Blur-heavy final composite
     CustomShaderEntry(0xE257D67B),  // Glow composite clamp
     CustomShaderEntry(0x665CE1C2),  // Composite + clamp / HDR recovery
 };
