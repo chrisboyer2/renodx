@@ -24,6 +24,7 @@
 namespace {
 
 renodx::mods::shader::CustomShaders custom_shaders = {
+    CustomShaderEntry(0xE257D67B),  // Glow composite clamp
     CustomShaderEntry(0x665CE1C2),  // Composite + clamp / HDR recovery
 };
 
