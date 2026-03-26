@@ -89,10 +89,14 @@ renodx::utils::settings::Settings settings = {
         .key = "ToneMapType",
         .binding = &shader_injection.tone_map_type,
         .value_type = renodx::utils::settings::SettingValueType::INTEGER,
-        .default_value = 3.f,
+        .default_value = 2.f,
         .label = "Tone Mapper",
         .section = "Tone Mapping",
-        .labels = {"Vanilla", "None", "ACES", "RenoDRT"},
+        .labels = {"Vanilla", "None", "RenoDRT"},
+        .parse = [](float value) {
+          if (value >= 2.f) return 3.f;
+          return value;
+        },
         .is_visible = []() { return current_settings_mode >= 1.f; },
     },
     new renodx::utils::settings::Setting{
@@ -121,9 +125,10 @@ renodx::utils::settings::Settings settings = {
         .default_value = 203.f,
         .label = "UI Brightness",
         .section = "Tone Mapping",
-        .tooltip = "Sets the brightness of UI and HUD elements in nits",
+        .tooltip = "Hidden for now because Trine 2 currently uses a unified scene/UI output path",
         .min = 48.f,
         .max = 500.f,
+        .is_visible = []() { return false; },
     },
     new renodx::utils::settings::Setting{
         .key = "GammaCorrection",
@@ -228,9 +233,9 @@ renodx::utils::settings::Settings settings = {
         .default_value = 50.f,
         .label = "Highlight Saturation",
         .section = "Color Grading",
-        .tooltip = "Adds or removes highlight color.",
+        .tooltip = "Adds or removes highlight color in RenoDRT.",
         .max = 100.f,
-        .is_enabled = []() { return shader_injection.tone_map_type >= 1.f; },
+        .is_enabled = []() { return shader_injection.tone_map_type == 3.f; },
         .parse = [](float value) { return value * 0.02f; },
         .is_visible = []() { return current_settings_mode >= 1.f; },
     },

@@ -69,6 +69,8 @@ float4 shader_injection[8] : register(c50);
 #define RENODX_TONE_MAP_PER_CHANNEL            shader_injection[4][0]
 #define RENODX_GAMMA_CORRECTION                shader_injection[4][1]
 #define RENODX_SWAP_CHAIN_CUSTOM_COLOR_SPACE   shader_injection[4][2]
+#define RENODX_INTERMEDIATE_SCALING            1.f
+#define RENODX_SWAP_CHAIN_SCALING_NITS         RENODX_DIFFUSE_WHITE_NITS
 
 #define RENODX_RENO_DRT_TONE_MAP_METHOD renodx::tonemap::renodrt::config::tone_map_method::HERMITE_SPLINE
 #define RENODX_RENO_DRT_NEUTRAL_SDR_TONE_MAP_METHOD   renodx::tonemap::renodrt::config::tone_map_method::HERMITE_SPLINE
@@ -105,6 +107,8 @@ cbuffer shader_injection : register(b13) {
 #define RENODX_TONE_MAP_PER_CHANNEL            shader_injection.tone_map_per_channel
 #define RENODX_GAMMA_CORRECTION                shader_injection.gamma_correction
 #define RENODX_SWAP_CHAIN_CUSTOM_COLOR_SPACE   shader_injection.swap_chain_custom_color_space
+#define RENODX_INTERMEDIATE_SCALING            1.f
+#define RENODX_SWAP_CHAIN_SCALING_NITS         RENODX_DIFFUSE_WHITE_NITS
 
 #define RENODX_RENO_DRT_TONE_MAP_METHOD        renodx::tonemap::renodrt::config::tone_map_method::HERMITE_SPLINE
 #define RENODX_RENO_DRT_NEUTRAL_SDR_TONE_MAP_METHOD   renodx::tonemap::renodrt::config::tone_map_method::HERMITE_SPLINE

@@ -11,8 +11,12 @@ float3 HermiteSplineRolloff(float3 hdr_color) {
 
 float3 ToneMapPass(float3 hdr_color, float3 sdr_color, float3 hdr_color_tm, float2 texcoord) {
   float3 output_color;
-  if (RENODX_TONE_MAP_TYPE == 0 || RENODX_TONE_MAP_TYPE == 2) {
+  if (RENODX_TONE_MAP_TYPE == 0) {
     output_color = saturate(sdr_color);
+  } else if (RENODX_TONE_MAP_TYPE == 2) {
+    // Trine 2 does not have a trustworthy SDR reference for ACES upgrade.
+    // Feed the scene HDR directly into the shared ACES pipeline instead.
+    output_color = renodx::draw::ToneMapPass(hdr_color);
   } else {
     output_color = renodx::draw::ToneMapPass(hdr_color, sdr_color, hdr_color_tm);
   }
