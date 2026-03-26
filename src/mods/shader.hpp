@@ -22,12 +22,14 @@
 #include <shared_mutex>
 #include <sstream>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <include/reshade.hpp>
 
 #include "../utils/constants.hpp"
 #include "../utils/data.hpp"
+#include "../utils/directx.hpp"
 #include "../utils/format.hpp"
 #include "../utils/resource.hpp"
 #include "../utils/shader.hpp"
@@ -114,12 +116,19 @@ static float* resource_tag_float = nullptr;
 static int32_t expected_constant_buffer_index = -1;
 static uint32_t expected_constant_buffer_space = 0;
 static uint32_t constant_buffer_offset = 0;
+static std::unordered_set<reshade::api::device_api> ignored_device_apis = {};
 
 static std::shared_mutex unmodified_shaders_mutex;
 static std::unordered_set<uint32_t> unmodified_shaders;
 static renodx::utils::data::ParallelNodeHashMap<uint32_t, CustomShader> custom_shaders;
 
 static std::unordered_map<uint32_t, uint32_t> counted_shaders;
+
+static bool ShouldIgnoreDevice(reshade::api::device* device) {
+  return device != nullptr
+         && ignored_device_apis.contains(device->get_api())
+         && !renodx::utils::directx::is_creating_proxy_device;
+}
 
 // Return false to abort
 static bool (*on_create_pipeline_layout)(reshade::api::device*, std::span<reshade::api::pipeline_layout_param>) = nullptr;
@@ -137,6 +146,15 @@ struct __declspec(uuid("018e7b9c-23fd-7863-baf8-a8dad2a6db9d")) DeviceData {
 };
 
 static void OnInitDevice(reshade::api::device* device) {
+  if (ignored_device_apis.contains(device->get_api()) && !renodx::utils::directx::is_creating_proxy_device) {
+    std::stringstream s;
+    s << "mods::shader::OnInitDevice(Abort from ignored device api: ";
+    s << static_cast<uint32_t>(device->get_api());
+    s << ")";
+    reshade::log::message(reshade::log::level::info, s.str().c_str());
+    return;
+  }
+
   std::stringstream s;
   s << "mods::shader::OnInitDevice(";
   s << reinterpret_cast<uintptr_t>(device);
@@ -158,6 +176,7 @@ static void OnInitDevice(reshade::api::device* device) {
 }
 
 static void OnDestroyDevice(reshade::api::device* device) {
+  if (ignored_device_apis.contains(device->get_api())) return;
   std::stringstream s;
   s << "mods::shader::OnDestroyDevice(";
   s << reinterpret_cast<uintptr_t>(device);
@@ -171,6 +190,7 @@ static bool OnCreatePipelineLayout(
     reshade::api::device* device,
     uint32_t& param_count,
     reshade::api::pipeline_layout_param*& params) {
+  if (ShouldIgnoreDevice(device)) return false;
   uint32_t cbv_index = 0;
   uint32_t pc_count = 0;
   uint32_t pdss_index = -1;
@@ -357,6 +377,7 @@ static void OnInitPipelineLayout(
     const uint32_t param_count,
     const reshade::api::pipeline_layout_param* params,
     reshade::api::pipeline_layout layout) {
+  if (ShouldIgnoreDevice(device)) return;
   assert(layout.handle != 0u);
 
   if (on_init_pipeline_layout != nullptr) {
@@ -624,6 +645,7 @@ static void OnInitPipelineLayout(
 static void OnDestroyPipelineLayout(
     reshade::api::device* device,
     reshade::api::pipeline_layout layout) {
+  if (ShouldIgnoreDevice(device)) return;
   assert(layout.handle != 0u);
 
   bool changed = false;
@@ -1049,6 +1071,7 @@ inline void OnPresent(
     const reshade::api::rect* /*dest_rect*/,
     uint32_t /*dirty_rect_count*/,
     const reshade::api::rect* /*dirty_rects*/) {
+  if (ShouldIgnoreDevice(swapchain->get_device())) return;
   auto* data = renodx::utils::data::Get<DeviceData>(swapchain->get_device());
   if (data == nullptr) return;
 

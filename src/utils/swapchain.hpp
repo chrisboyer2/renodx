@@ -23,6 +23,7 @@
 
 #include "./data.hpp"
 #include "./device.hpp"
+#include "./directx.hpp"
 #include "./format.hpp"
 #include "./platform.hpp"
 #include "./resource.hpp"
@@ -30,6 +31,7 @@
 namespace renodx::utils::swapchain {
 
 static float fps_limit = 0.f;
+static std::unordered_set<reshade::api::device_api> ignored_device_apis = {};
 
 struct __declspec(uuid("4721e307-0cf3-4293-b4a5-40d0a4e62544")) DeviceData {
   std::shared_mutex mutex;
@@ -574,6 +576,15 @@ static const size_t MAX_LATENCY_HISTORY_SIZE = 1000;
 
 static bool is_primary_hook = false;
 static void OnInitDevice(reshade::api::device* device) {
+  if (ignored_device_apis.contains(device->get_api()) && !renodx::utils::directx::is_creating_proxy_device) {
+    std::stringstream s;
+    s << "utils::swapchain::OnInitDevice(Abort from ignored device api: ";
+    s << static_cast<uint32_t>(device->get_api());
+    s << ")";
+    reshade::log::message(reshade::log::level::info, s.str().c_str());
+    return;
+  }
+
   DeviceData* data;
   bool created = renodx::utils::data::CreateOrGet<DeviceData>(device, data);
   if (!created) return;
@@ -581,6 +592,7 @@ static void OnInitDevice(reshade::api::device* device) {
   is_primary_hook = true;
 }
 static void OnDestroyDevice(reshade::api::device* device) {
+  if (ignored_device_apis.contains(device->get_api())) return;
   if (!is_primary_hook) return;
   device->destroy_private_data<DeviceData>();
 }

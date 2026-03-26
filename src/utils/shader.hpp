@@ -26,6 +26,7 @@
 
 #include "./bitwise.hpp"
 #include "./data.hpp"
+#include "./directx.hpp"
 #include "./format.hpp"
 #include "./hash.hpp"
 #include "./log.hpp"
@@ -42,6 +43,7 @@ static bool initialized_device = false;
 static std::atomic_size_t runtime_replacement_count = 0;
 
 static bool is_primary_hook = false;
+static std::unordered_set<reshade::api::device_api> ignored_device_apis = {};
 
 static const int VERTEX_INDEX = 0;
 static const int PIXEL_INDEX = 1;
@@ -688,6 +690,15 @@ inline CommandListData* GetCurrentState(reshade::api::command_list* cmd_list) {
 }
 
 static void OnInitDevice(reshade::api::device* device) {
+  if (ignored_device_apis.contains(device->get_api()) && !renodx::utils::directx::is_creating_proxy_device) {
+    std::stringstream s;
+    s << "utils::shader::OnInitDevice(Abort from ignored device api: ";
+    s << static_cast<uint32_t>(device->get_api());
+    s << ")";
+    reshade::log::message(reshade::log::level::info, s.str().c_str());
+    return;
+  }
+
   DeviceData* data;
   bool created = renodx::utils::data::CreateOrGet(device, data);
 
@@ -762,6 +773,7 @@ static void OnInitDevice(reshade::api::device* device) {
 };
 
 static void OnDestroyDevice(reshade::api::device* device) {
+  if (ignored_device_apis.contains(device->get_api())) return;
   if (!is_primary_hook) return;
   std::stringstream s;
   s << "utils::shader::OnDestroyDevice(";
